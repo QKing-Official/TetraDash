@@ -76,3 +76,34 @@ To run the application, ensure you have Flask installed and then execute the scr
 ```bash
 pip install flask flask-login
 python app.py.py
+```
+# TODO List
+
+## Backend Enhancements
+
+- [ ] **Backend Support for Apps in Separate Files**: Implement a modular structure where each app has its own backend file, making the codebase more organized and maintainable.
+- [ ] **Default Permissions**: Define and implement default permissions for users and groups to streamline access control.
+
+## User Interface Improvements
+
+- [ ] **Better Widgets**: Enhance the existing widgets and add new ones to provide a richer user experience.
+- [ ] **Admins Can Add/Remove Apps**: Provide admin users with the ability to dynamically add or remove apps from the dashboard.
+- [ ] **Admins Can Add/Remove Widgets**: Allow admins to customize the dashboard by adding or removing widgets as needed.
+
+## Admin Settings
+
+- [ ] **Settings (for Admins)**: Create a settings page where admins can configure various aspects of the dashboard, such as user permissions, app visibility, and theme selection.
+
+## Design and Customization
+
+- [ ] **More Themes**: Develop additional themes to allow users to customize the look and feel of the dashboard.
+
+## Extensibility
+
+- [ ] **Plugin Support**: Implement a plugin architecture to enable easy integration of third-party tools and extensions.
+
+## Deployment
+
+- [ ] **Docker Support**: Create Dockerfiles and compose configurations to facilitate easy deployment and scaling of the application.
+
+
