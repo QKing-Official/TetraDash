@@ -1,0 +1,90 @@
+---
+QKING OPEN LICENSE (QKOL) v1.0
+
+Copyright (c) 2025 QKing
+
+Permission is hereby granted, free of charge, to any person or organization ("You") obtaining a copy of this software and associated documentation files (the "Software"), to use, modify, and distribute copies of the Software under the following terms:
+
+## 1. Usage Rights
+
+You are permitted to:
+- Use the Software for any purpose, including within private or commercial organizations.
+- Modify the Software freely.
+- Use the Software as part of a closed-source or proprietary system.
+- Distribute modified or unmodified versions of the Software non-commercially.
+- Use or apply this license in combination with other licenses, provided there is no direct conflict.
+- Sell or distribute paid plugins or extensions specifically designed to interact with the Software, once plugin support is available.
+- Use the Software in commercial settings without needing to request permission.
+
+## 2. Restrictions
+
+You are **not** permitted to:
+- Sell the Software, its modified versions, or any direct forks of the Software for financial compensation (including licenses, subscriptions, services, or direct sales) **without explicit written and signed permission** from the original publisher. This includes an autograph (physical or verified digital signature) confirming consent from:
+  - The original publisher.
+  - All individuals who have modified the Software since its original publication.
+  - If more than ten republishers exist, the required signatories are:
+    - The first uploader.
+    - The first five republishers.
+    - The last four republishers (in order of most recent distribution).
+
+## 3. Inclusion of License
+
+Any public redistribution (including binaries, source code, or derivative works) **must include a full, unmodified copy of this license**. This applies whether or not the Software is modified.
+
+## 4. Attribution for Commercial Derivatives
+
+If a modified version of the Software is republished **for commercial sale**, the following conditions must be met:
+- The license file must include the verified email address of the original publisher.
+- It must also include the names and email addresses of all prior republishers.
+- When the total number of republishers exceeds ten, the following must be included:
+  - The first uploader.
+  - The first five republishers.
+  - The last four republishers (in order of most recent distribution).
+- To sell the Software, **autographed and signed permission from all listed contributors under the above logic is required**.
+
+## 5. Third-Party Dependencies
+
+This license **does not apply** to any third-party libraries or dependencies included or used by the Software (e.g., Flask or other Python libraries). These are covered by their own respective licenses.
+
+## 6. Disclaimer
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+## 7. Reuploading
+
+When the Software is modified and republished, whether for sale or free use:
+- The email address of the most recent modifier/uploader must be included in the license file.
+- If there are multiple reuploads (e.g., 3 republishers), the license must list all 3 emails.
+- If the number exceeds ten, include only:
+  - The first uploader.
+  - The first five republishers.
+  - The last four republishers.
+
+## 8. (Commercial) Sale (Closed or Open Source)
+
+Selling the Software or any derivative version (whether closed or open source) is subject to the following:
+- The Software license must remain open and clearly visible to end users.
+- The license file must include:
+  - The email and verified autograph (digital or physical) of all contributors and republishers as defined above.
+  - Proof of consent and permission for commercial sale from all listed contributors.
+
+### 8b. Secondary and Subsequent Sales
+
+If a copy of the Software (or its derivative) is resold (i.e., secondary sales), the same logic applies:
+- Email and autograph of the original publisher.
+- Emails and autographs of the republishers, using the same rule:
+  - First uploader, first five, and last four (if over ten).
+- The new seller must retain and display the same license and obtain fresh signed permissions.
+
+## 9. Liability
+
+The original publisher and all republishers are **not** responsible for:
+- Any damages, misuse, loss of data, or consequences arising from use, resale, or redistribution of the Software.
+- Legal issues or disputes that result from improper or unauthorized resale.
+
+---
+
+**To request selling rights, contact:** qking@friendlynodes.xyz
+
+**Original Publisher:** QKing
+
