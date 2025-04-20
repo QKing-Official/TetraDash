@@ -1,6 +1,6 @@
 # TetraDash
 
-A universal dashboard with admin and client functions, featuring dynamic app updating without the need to add another endpoint. Don't judge the frontend, I used a bit of ai for that (I'm sorry).
+A ==universal dashboard== with admin and client functions, featuring dynamic app updating without the need to add another endpoint. Don't judge the frontend, I used a bit of ai for that (I'm sorry).
 
 ## Features
 
