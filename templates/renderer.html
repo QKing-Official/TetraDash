@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TetraDash Changelog Renderer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <style>
+        /* Base theme variables with enhanced color scheme */
+        :root {
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-color: #1a202c;
+            --border-color: #e2e8f0;
+            --accent-color: #3182ce;
+            --accent-hover: #2c5282;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --header-bg: #ffffff;
+            --header-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            --footer-bg: rgba(255, 255, 255, 0.8);
+            --card-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            --logo-gradient-from: #3182ce;
+            --logo-gradient-to: #4299e1;
+            --pdf-bg: #f8f9fa;
+            --pdf-controls-bg: #e2e8f0;
+            --pdf-toolbar-bg: #f1f5f9;
+            --pdf-button-color: #3182ce;
+            --pdf-button-hover: #2c5282;
+            --pdf-text: #1a202c;
+        }
+        
+        [data-bs-theme="dark"] {
+            --bg-color: #1a202c;
+            --card-bg: #2d3748;
+            --text-color: #e2e8f0;
+            --border-color: #4a5568;
+            --accent-color: #63b3ed;
+            --accent-hover: #90cdf4;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --header-bg: #2d3748;
+            --header-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            --footer-bg: rgba(45, 55, 72, 0.8);
+            --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            --logo-gradient-from: #63b3ed;
+            --logo-gradient-to: #4299e1;
+            --pdf-bg: #1a202c;
+            --pdf-controls-bg: #2d3748;
+            --pdf-toolbar-bg: #2d3748;
+            --pdf-button-color: #63b3ed;
+            --pdf-button-hover: #90cdf4;
+            --pdf-text: #e2e8f0;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+        }
+        
+        .header {
+            background-color: var(--header-bg);
+            box-shadow: var(--header-shadow);
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(8px);
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .logo {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--logo-gradient-from), var(--logo-gradient-to));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .header-title {
+            font-size: 20px;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        .content-container {
+            display: flex;
+            flex: 1;
+            padding: 24px;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .viewer-container {
+            width: 100%;
+            max-width: 1200px;
+            height: calc(100vh - 140px);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* PDF Viewer Styles */
+        .pdf-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--pdf-toolbar-bg);
+            border-bottom: 1px solid var(--border-color);
+            padding: 8px 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .pdf-nav {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .pdf-button {
+            background-color: var(--pdf-button-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .pdf-button:hover {
+            background-color: var(--pdf-button-hover);
+        }
+        
+        .pdf-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .pdf-page-info {
+            font-size: 14px;
+            color: var(--pdf-text);
+            margin: 0 10px;
+        }
+        
+        .pdf-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .pdf-zoom-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .pdf-container {
+            flex: 1;
+            overflow: auto;
+            background-color: var(--pdf-bg);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 16px;
+        }
+        
+        #pdf-canvas {
+            box-shadow: 0 2px 10px var(--shadow-color);
+            transition: all 0.3s ease;
+        }
+        
+        .pdf-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-color);
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border-left-color: var(--accent-color);
+            animation: spin 1s linear infinite;
+            margin-bottom: 16px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Theme switch styles */
+        .controls-container {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .theme-container {
+            display: flex;
+            align-items: center;
+            background-color: var(--card-bg);
+            border-radius: 24px;
+            padding: 4px 12px;
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+        
+        .theme-switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 26px;
+            margin-left: 8px;
+        }
+        
+        .theme-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e0;
+            transition: 0.4s;
+            border-radius: 34px;
+        }
+        
+        .slider::before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        input:checked + .slider {
+            background-color: var(--accent-color);
+        }
+        
+        input:checked + .slider::before {
+            transform: translateX(26px);
+        }
+        
+        /* Theme icons */
+        .theme-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .theme-icon {
+            font-size: 16px;
+        }
+        
+        /* Footer styles */
+        footer {
+            text-align: center;
+            padding: 12px 24px;
+            font-size: 14px;
+            color: var(--text-color);
+            background-color: var(--footer-bg);
+            border-top: 1px solid var(--border-color);
+            backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .footer-brand {
+            font-weight: 600;
+            color: var(--accent-color);
+        }
+        
+        .footer-links {
+            display: flex;
+            gap: 16px;
+        }
+        
+        .footer-link {
+            color: var(--accent-color);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        
+        .footer-link:hover {
+            color: var(--accent-hover);
+            text-decoration: underline;
+        }
+        
+        /* Animation for theme switch */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(49, 130, 206, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(49, 130, 206, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(49, 130, 206, 0); }
+        }
+        
+        .theme-switch:active .slider {
+            animation: pulse 0.5s;
+        }
+        
+        /* For non-PDF content */
+        .iframe-container {
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+        
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .header {
+                padding: 14px 16px;
+                flex-wrap: wrap;
+            }
+            
+            .viewer-container {
+                height: calc(100vh - 160px);
+                border-radius: 8px;
+            }
+            
+            .content-container {
+                padding: 16px;
+            }
+            
+            footer {
+                flex-direction: column;
+                gap: 8px;
+                padding: 10px;
+            }
+            
+            .footer-links {
+                justify-content: center;
+            }
+            
+            .pdf-toolbar {
+                flex-direction: column;
+                gap: 8px;
+                padding: 8px;
+            }
+            
+            .pdf-nav, .pdf-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo-container">
+            <div class="logo">TD</div>
+            <div class="header-title">TetraDash Changelog</div>
+        </div>
+        <div class="controls-container">
+            <div class="theme-container">
+                <span class="theme-label">
+                    <span class="theme-icon light-icon">☀️</span>
+                    <span class="theme-icon dark-icon" style="display:none;">🌙</span>
+                </span>
+                <label class="theme-switch">
+                    <input type="checkbox" id="theme-toggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </header>
+    
+    <div class="content-container">
+        <div class="viewer-container">
+            <!-- PDF Viewer -->
+            <div class="pdf-container" id="pdf-viewer">
+                <div class="pdf-loading" id="pdf-loading">
+                    <div class="spinner"></div>
+                    <div>Loading changelog...</div>
+                </div>
+                <canvas id="pdf-canvas"></canvas>
+            </div>
+            
+            <div class="pdf-toolbar" id="pdf-toolbar" style="display: none;">
+                <div class="pdf-nav">
+                    <button class="pdf-button" id="prev-page">
+                        ◀ Previous
+                    </button>
+                    <span class="pdf-page-info">
+                        Page <span id="page-num">1</span> of <span id="page-count">1</span>
+                    </span>
+                    <button class="pdf-button" id="next-page">
+                        Next ▶
+                    </button>
+                </div>
+                <div class="pdf-controls">
+                    <div class="pdf-zoom-controls">
+                        <button class="pdf-button" id="zoom-out">−</button>
+                        <span class="pdf-page-info" id="zoom-level">100%</span>
+                        <button class="pdf-button" id="zoom-in">+</button>
+                    </div>
+                    <button class="pdf-button" id="download-pdf">
+                        Download
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Non-PDF content fallback -->
+            <div class="iframe-container">
+                <iframe src="" id="content-frame" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <div class="footer-copyright">
+            © 2025 <span class="footer-brand">TetraDash</span> • All Rights Reserved
+        </div>
+        <div class="footer-links">
+            <a href="#" class="footer-link">Help</a>
+            <a href="#" class="footer-link">About</a>
+            <a href="#" class="footer-link">Contact</a>
+        </div>
+    </footer>
+    
+    <script>
+        // Initialize PDF.js
+        const pdfjsLib = window['pdfjs-dist/build/pdf'];
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+        
+        // Execute immediately instead of waiting for DOMContentLoaded
+        (function() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const html = document.documentElement;
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const savedTheme = localStorage.getItem('theme');
+            const lightIcon = document.querySelector('.light-icon');
+            const darkIcon = document.querySelector('.dark-icon');
+            const contentFrame = document.getElementById('content-frame');
+            
+            // PDF Viewer elements
+            const pdfViewer = document.getElementById('pdf-viewer');
+            const pdfLoading = document.getElementById('pdf-loading');
+            const pdfCanvas = document.getElementById('pdf-canvas');
+            const pdfToolbar = document.getElementById('pdf-toolbar');
+            const prevPageButton = document.getElementById('prev-page');
+            const nextPageButton = document.getElementById('next-page');
+            const pageNumSpan = document.getElementById('page-num');
+            const pageCountSpan = document.getElementById('page-count');
+            const zoomInButton = document.getElementById('zoom-in');
+            const zoomOutButton = document.getElementById('zoom-out');
+            const zoomLevelSpan = document.getElementById('zoom-level');
+            const downloadButton = document.getElementById('download-pdf');
+            const iframeContainer = document.querySelector('.iframe-container');
+            
+            // PDF.js variables
+            let pdfDoc = null;
+            let pageNum = 1;
+            let pageRendering = false;
+            let pageNumPending = null;
+            let scale = 1.0;
+            let canvas = pdfCanvas;
+            let ctx = canvas.getContext('2d');
+            let url = "{{ url }}";
+            
+            function setTheme(theme) {
+                html.setAttribute('data-bs-theme', theme);
+                localStorage.setItem('theme', theme);
+                themeToggle.checked = theme === 'dark';
+                
+                // Update icon visibility
+                if (theme === 'dark') {
+                    lightIcon.style.display = 'none';
+                    darkIcon.style.display = 'inline';
+                } else {
+                    lightIcon.style.display = 'inline';
+                    darkIcon.style.display = 'none';
+                }
+                
+                // If we have a loaded PDF, re-render the current page
+                // This ensures PDF rendering matches the theme
+                if (pdfDoc) {
+                    queueRenderPage(pageNum);
+                }
+                
+                // Try to communicate with iframe if needed
+                if (iframeContainer.style.display === 'block') {
+                    try {
+                        if (contentFrame.contentWindow) {
+                            contentFrame.contentWindow.postMessage({
+                                type: 'theme-change',
+                                theme: theme
+                            }, '*');
+                        }
+                    } catch (e) {
+                        console.log('Cannot communicate with iframe:', e);
+                    }
+                }
+            }
+            
+            // Auto switch based on saved or system preference
+            if (savedTheme) {
+                setTheme(savedTheme);
+            } else {
+                setTheme(systemPrefersDark ? 'dark' : 'light');
+            }
+            
+            // Determine if URL is a PDF
+            function isPDF(url) {
+                return url.toLowerCase().endsWith('.pdf') || url.toLowerCase().includes('pdf=');
+            }
+            
+            // Function to render a page
+            function renderPage(num) {
+                pageRendering = true;
+                
+                // Using promise to fetch the page
+                pdfDoc.getPage(num).then(function(page) {
+                    const viewport = page.getViewport({ scale: scale });
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    
+                    // Render PDF page into canvas context
+                    const renderContext = {
+                        canvasContext: ctx,
+                        viewport: viewport
+                    };
+                    
+                    const renderTask = page.render(renderContext);
+                    
+                    // Wait for rendering to finish
+                    renderTask.promise.then(function() {
+                        pageRendering = false;
+                        
+                        if (pageNumPending !== null) {
+                            // New page rendering is pending
+                            renderPage(pageNumPending);
+                            pageNumPending = null;
+                        }
+                    });
+                });
+                
+                // Update page counters
+                pageNumSpan.textContent = num;
+                
+                // Update button states
+                prevPageButton.disabled = num <= 1;
+                nextPageButton.disabled = num >= pdfDoc.numPages;
+            }
+            
+            // If another page rendering in progress, wait until the rendering is finished
+            function queueRenderPage(num) {
+                if (pageRendering) {
+                    pageNumPending = num;
+                } else {
+                    renderPage(num);
+                }
+            }
+            
+            // Go to previous page
+            function goPrevPage() {
+                if (pageNum <= 1) {
+                    return;
+                }
+                pageNum--;
+                queueRenderPage(pageNum);
+            }
+            
+            // Go to next page
+            function goNextPage() {
+                if (pageNum >= pdfDoc.numPages) {
+                    return;
+                }
+                pageNum++;
+                queueRenderPage(pageNum);
+            }
+            
+            // Zoom in
+            function zoomIn() {
+                scale *= 1.2;
+                zoomLevelSpan.textContent = Math.round(scale * 100) + '%';
+                queueRenderPage(pageNum);
+            }
+            
+            // Zoom out
+            function zoomOut() {
+                if (scale > 0.5) {
+                    scale /= 1.2;
+                    zoomLevelSpan.textContent = Math.round(scale * 100) + '%';
+                    queueRenderPage(pageNum);
+                }
+            }
+            
+            // Download PDF
+            function downloadPDF() {
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'changelog.pdf';
+                link.click();
+            }
+            
+            // Load PDF or show iframe based on URL
+            function loadContent() {
+                const urlToLoad = '{{ url }}';
+                
+                if (isPDF(urlToLoad)) {
+                    // Show PDF viewer
+                    pdfViewer.style.display = 'flex';
+                    pdfToolbar.style.display = 'flex';
+                    iframeContainer.style.display = 'none';
+                    
+                    // Load PDF
+                    pdfjsLib.getDocument(urlToLoad).promise.then(function(pdfDoc_) {
+                        pdfDoc = pdfDoc_;
+                        pageCountSpan.textContent = pdfDoc.numPages;
+                        
+                        // Initial render
+                        pdfLoading.style.display = 'none';
+                        renderPage(pageNum);
+                    }).catch(function(error) {
+                        console.error('Error loading PDF:', error);
+                        pdfLoading.innerHTML = '<div>Error loading PDF. Please try again.</div>';
+                    });
+                    
+                    // Add event listeners
+                    prevPageButton.addEventListener('click', goPrevPage);
+                    nextPageButton.addEventListener('click', goNextPage);
+                    zoomInButton.addEventListener('click', zoomIn);
+                    zoomOutButton.addEventListener('click', zoomOut);
+                    downloadButton.addEventListener('click', downloadPDF);
+                    
+                    // Add keyboard navigation
+                    document.addEventListener('keydown', function(e) {
+                        if (e.key === 'ArrowRight' || e.key === ' ') {
+                            goNextPage();
+                        } else if (e.key === 'ArrowLeft') {
+                            goPrevPage();
+                        }
+                    });
+                    
+                } else {
+                    // Show iframe for non-PDF content
+                    pdfViewer.style.display = 'none';
+                    pdfToolbar.style.display = 'none';
+                    iframeContainer.style.display = 'block';
+                    contentFrame.src = urlToLoad;
+                }
+            }
+            
+            // Initialize content loading
+            loadContent();
+            
+            // Manual toggle with animation
+            themeToggle.addEventListener('change', function() {
+                const newTheme = this.checked ? 'dark' : 'light';
+                setTheme(newTheme);
+                
+                // Add animation to container on theme switch
+                const container = document.querySelector('.viewer-container');
+                container.style.transition = 'all 0.3s ease';
+                container.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    container.style.transform = 'scale(1)';
+                }, 200);
+            });
+            
+            // Listen for system preference changes
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (!localStorage.getItem('theme')) {
+                    setTheme(e.matches ? 'dark' : 'light');
+                }
+            });
+            
+            // Add event listener for messages from iframe
+            window.addEventListener('message', function(event) {
+                // Handle any messages from iframe if needed
+                if (event.data && event.data.type === 'ready') {
+                    // Send current theme to iframe when it's ready
+                    const currentTheme = html.getAttribute('data-bs-theme');
+                    event.source.postMessage({
+                        type: 'theme-change',
+                        theme: currentTheme
+                    }, '*');
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

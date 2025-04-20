@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block title %}User Management{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="h2 border-bottom pb-2 mb-4">User Management</h1>
+
+        <!-- Back to Dashboard Button -->
+        <div class="mb-4">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    
+    <!-- Tabs for different functions -->
+    <ul class="nav nav-tabs mb-4" id="userManagementTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="create-tab" data-bs-toggle="tab" data-bs-target="#create" type="button" role="tab" aria-controls="create" aria-selected="true">Create User</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="manage-tab" data-bs-toggle="tab" data-bs-target="#manage" type="button" role="tab" aria-controls="manage" aria-selected="false">Manage Users</button>
+        </li>
+    </ul>
+    
+    <div class="tab-content" id="userManagementTabContent">
+        <!-- Create User Tab -->
+        <div class="tab-pane fade show active" id="create" role="tabpanel" aria-labelledby="create-tab">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">New User Form</h5>
+                            
+                            <form method="post">
+                                <input type="hidden" name="action" value="create_user">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="username" name="username" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="password" name="password" required>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="is_admin" name="is_admin">
+                                    <label class="form-check-label" for="is_admin">Admin User</label>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Create User</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Manage Users Tab -->
+        <div class="tab-pane fade" id="manage" role="tabpanel" aria-labelledby="manage-tab">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">User List</h5>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Username</th>
+                                            <th>Admin Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for user_item in users %}
+                                        <tr class="{% if user_item.id == user.id %}table-info{% endif %}">
+                                            <td>{{ user_item.id }}</td>
+                                            <td>{{ user_item.username }}{% if user_item.id == user.id %} (You){% endif %}</td>
+                                            <td>
+                                                {% if user_item.is_admin %}
+                                                <span class="badge bg-danger">Admin</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">Regular</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <!-- Reset Password Button -->
+                                                <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#resetPasswordModal{{ user_item.id }}">
+                                                    Reset Password
+                                                </button>
+                                                
+                                                <!-- Toggle Admin Button (not for self) -->
+                                                {% if user_item.id != user.id %}
+                                                <form method="post" style="display: inline;">
+                                                    <input type="hidden" name="action" value="toggle_admin">
+                                                    <input type="hidden" name="user_id" value="{{ user_item.id }}">
+                                                    {% if user_item.is_admin %}
+                                                    <button type="submit" class="btn btn-secondary btn-sm">Revoke Admin</button>
+                                                    {% else %}
+                                                    <button type="submit" class="btn btn-primary btn-sm">Make Admin</button>
+                                                    {% endif %}
+                                                </form>
+                                                {% endif %}
+                                                
+                                                <!-- Delete Button (not for self) -->
+                                                {% if user_item.id != user.id %}
+                                                <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteUserModal{{ user_item.id }}">
+                                                    Delete
+                                                </button>
+                                                {% endif %}
+                                                
+                                                <!-- Reset Password Modal -->
+                                                <div class="modal fade" id="resetPasswordModal{{ user_item.id }}" tabindex="-1" aria-labelledby="resetPasswordModalLabel{{ user_item.id }}" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="resetPasswordModalLabel{{ user_item.id }}">Reset Password for {{ user_item.username }}</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <form method="post">
+                                                                <div class="modal-body">
+                                                                    <input type="hidden" name="action" value="reset_password">
+                                                                    <input type="hidden" name="user_id" value="{{ user_item.id }}">
+                                                                    <div class="mb-3">
+                                                                        <label for="new_password{{ user_item.id }}" class="form-label">New Password</label>
+                                                                        <input type="password" class="form-control" id="new_password{{ user_item.id }}" name="new_password" required>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                    <button type="submit" class="btn btn-primary">Reset Password</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Delete User Modal -->
+                                                {% if user_item.id != user.id %}
+                                                <div class="modal fade" id="deleteUserModal{{ user_item.id }}" tabindex="-1" aria-labelledby="deleteUserModalLabel{{ user_item.id }}" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="deleteUserModalLabel{{ user_item.id }}">Delete User {{ user_item.username }}</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                Are you sure you want to delete user {{ user_item.username }}? This action cannot be undone.
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                <form method="post" style="display: inline;">
+                                                                    <input type="hidden" name="action" value="delete_user">
+                                                                    <input type="hidden" name="user_id" value="{{ user_item.id }}">
+                                                                    <button type="submit" class="btn btn-danger">Delete User</button>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript to keep the active tab after form submission -->
+<script>
+    // Store the active tab in sessionStorage
+    document.querySelectorAll('#userManagementTabs button').forEach(tab => {
+        tab.addEventListener('click', () => {
+            sessionStorage.setItem('activeUserManagementTab', tab.id);
+        });
+    });
+    
+    // Restore active tab on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        const activeTab = sessionStorage.getItem('activeUserManagementTab');
+        if (activeTab) {
+            const tab = document.getElementById(activeTab);
+            if (tab) {
+                const bsTab = new bootstrap.Tab(tab);
+                bsTab.show();
+            }
+        }
+    });
+</script>
+{% endblock %}

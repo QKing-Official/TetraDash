@@ -1,0 +1,21 @@
+<!-- templates/app_wrapper.html -->
+{% extends 'base.html' %}
+{% block title %}{{ app_name.replace('_', ' ').title() }}{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="h2 border-bottom pb-2 mb-4">{{ app_name.replace('_', ' ').title() }}</h1>
+    
+    <!-- Back to Dashboard button -->
+    <div class="mb-4">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            {{ app_content|safe }}
+        </div>
+    </div>
+</div>
+{% endblock %}

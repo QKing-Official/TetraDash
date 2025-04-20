@@ -1,0 +1,1053 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="h2 border-bottom pb-2 mb-4">Dashboard</h1>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Welcome to your Dashboard</h5>
+                    <p class="card-text">
+                        This is the main dashboard page. You can navigate to different apps using the sidebar.
+                    </p>
+                    <p>Available apps:</p>
+                    <div class="row">
+                        {% for app in apps %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title d-flex align-items-center">
+                                        <img src="{{ url_for('static', filename=app.icon|default('default_icon.png')) }}" alt="{{ app.name }}" class="app-icon">
+                                        {{ app.name }}
+                                        {% if app.is_admin_only %}
+                                        <span class="badge bg-danger ms-2">Admin</span>
+                                        {% endif %}
+                                    </h5>
+                                    <a href="{{ url_for('serve_app', app_name=app.url) }}" class="btn btn-sm btn-primary mt-2">Open</a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Widgets</h5>
+                    <div class="row" id="widget-container">
+                        <!-- Clock Widget -->
+                        <div class="col-md-4 mb-4 widget" id="clock-widget-container" data-widget="clock" style="display: none;">
+                            <div class="card h-100">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title d-flex align-items-center justify-content-center">
+                                        <img src="{{ url_for('static', filename='clock.png') }}" alt="Clock" class="app-icon">
+                                        <span class="ms-2">Clock</span>
+                                    </h5>
+                                    <div id="clock-widget">
+                                        <div id="digital-clock" class="digital-clock">Loading...</div>
+                                        <canvas id="analog-clock" width="200" height="200" style="display: none;"></canvas>
+                                        <div class="mt-2">
+                                            <button class="btn btn-sm btn-secondary" onclick="toggleClockView()">Switch View</button>
+                                            <button class="btn btn-sm btn-danger" onclick="removeWidget('clock')">Remove</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Weather Widget -->
+                        <div class="col-md-4 mb-4 widget" id="weather-widget-container" data-widget="weather" style="display: none;">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title d-flex align-items-center justify-content-between">
+                                        <span>
+                                            <img src="{{ url_for('static', filename='weather.png') }}" alt="Weather" class="app-icon">
+                                            Weather
+                                        </span>
+                                        <button class="btn btn-sm btn-danger" onclick="removeWidget('weather')">Remove</button>
+                                    </h5>
+                                    <div id="weather-widget">
+                                        <button class="btn btn-sm btn-primary" onclick="getLocation()">Get Weather</button>
+                                        <div id="weather-data" class="mt-2">Click to load weather data</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Notes Widget -->
+                        <div class="col-md-4 mb-4 widget" id="notes-widget-container" data-widget="notes" style="display: none;">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title d-flex align-items-center justify-content-between">
+                                        <span>
+                                            <img src="{{ url_for('static', filename='notes.png') }}" alt="Notes" class="app-icon">
+                                            Notes
+                                        </span>
+                                        <button class="btn btn-sm btn-danger" onclick="removeWidget('notes')">Remove</button>
+                                    </h5>
+                                    <textarea id="notes-widget" class="form-control" rows="5" placeholder="Write your notes here..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Todo List Widget -->
+                        <div class="col-md-4 mb-4 widget" id="todo-widget-container" data-widget="todo" style="display: none;">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title d-flex align-items-center justify-content-between">
+                                        <span>
+                                            <img src="{{ url_for('static', filename='todo.png') }}" alt="Todo List" class="app-icon">
+                                            Todo List
+                                        </span>
+                                        <button class="btn btn-sm btn-danger" onclick="removeWidget('todo')">Remove</button>
+                                    </h5>
+                                    <div id="todo-widget">
+                                        <div class="input-group mb-2">
+                                            <input type="text" id="todo-input" class="form-control" placeholder="Add new task">
+                                            <input type="datetime-local" id="todo-due-date" class="form-control" placeholder="Due Date">
+                                            <button class="btn btn-primary" onclick="addTodoItem()">Add</button>
+                                        </div>
+                                        <ul id="todo-list" class="list-group"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- News Feed Widget -->
+                        <div class="col-md-4 mb-4 widget" id="news-widget-container" data-widget="news" style="display: none;">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title d-flex align-items-center justify-content-between">
+                                        <span>
+                                            <img src="{{ url_for('static', filename='news.png') }}" alt="News Feed" class="app-icon">
+                                            News Feed
+                                        </span>
+                                        <button class="btn btn-sm btn-danger" onclick="removeWidget('news')">Remove</button>
+                                    </h5>
+                                    <div id="news-widget">
+                                        <div class="input-group mb-2">
+                                            <select id="news-category" class="form-select">
+                                                <option value="general">General</option>
+                                                <option value="business">Business</option>
+                                                <option value="technology">Technology</option>
+                                                <option value="sports">Sports</option>
+                                                <option value="entertainment">Entertainment</option>
+                                                <option value="science">Science</option>
+                                                <option value="health">Health</option>
+                                            </select>
+                                            <button class="btn btn-primary" onclick="fetchNews()">Load News</button>
+                                        </div>
+                                        <div id="news-list" class="list-group">
+                                            <div class="text-center">Select a category and click "Load News"</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Calculator Widget -->
+                        <div class="col-md-4 mb-4 widget" id="calculator-widget-container" data-widget="calculator" style="display: none;">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title d-flex align-items-center justify-content-between">
+                                        <span>
+                                            <img src="{{ url_for('static', filename='calculator.png') }}" alt="Calculator" class="app-icon">
+                                            Calculator
+                                        </span>
+                                        <button class="btn btn-sm btn-danger" onclick="removeWidget('calculator')">Remove</button>
+                                    </h5>
+                                    <div id="calculator-widget">
+                                        <input type="text" id="calc-display" class="form-control mb-2" disabled>
+                                        <div class="calculator-buttons">
+                                            <div class="row g-1 mb-1">
+                                                <div class="col-3"><button class="btn btn-outline-secondary w-100" onclick="appendToCalc('7')">7</button></div>
+                                                <div class="col-3"><button class="btn btn-outline-secondary w-100" onclick="appendToCalc('8')">8</button></div>
+                                                <div class="col-3"><button class="btn btn-outline-secondary w-100" onclick="appendToCalc('9')">9</button></div>
+                                                <div class="col-3"><button class="btn btn-outline-secondary w-100" onclick="appendToCalc('/')">/</button></div>
+                                            </div>
+                                            <div class="row g-1 mb-1">
+                                                <div class="col-3"><button class="btn btn-outline-secondary w-100" onclick="appendToCalc('4')">4</button></div>
+                                                <div class="col-3"><button class="btn btn-outline-secondary w-100" onclick="appendToCalc('5')">5</button></div>
+                                                <div class="col-3"><button class="btn btn-outline-secondary w-100" onclick="appendToCalc('6')">6</button></div>
+                                                <div class="col-3"><button class="btn btn-outline-secondary w-100" onclick="appendToCalc('*')">*</button></div>
+                                            </div>
+                                            <div class="row g-1 mb-1">
+                                                <div class="col-3"><button class="btn btn-outline-secondary w-100" onclick="appendToCalc('1')">1</button></div>
+                                                <div class="col-3"><button class="btn btn-outline-secondary w-100" onclick="appendToCalc('2')">2</button></div>
+                                                <div class="col-3"><button class="btn btn-outline-secondary w-100" onclick="appendToCalc('3')">3</button></div>
+                                                <div class="col-3"><button class="btn btn-outline-secondary w-100" onclick="appendToCalc('-')">-</button></div>
+                                            </div>
+                                            <div class="row g-1">
+                                                <div class="col-3"><button class="btn btn-outline-secondary w-100" onclick="appendToCalc('0')">0</button></div>
+                                                <div class="col-3"><button class="btn btn-outline-secondary w-100" onclick="appendToCalc('.')">.</button></div>
+                                                <div class="col-3"><button class="btn btn-primary w-100" onclick="calculateResult()">=</button></div>
+                                                <div class="col-3"><button class="btn btn-outline-secondary w-100" onclick="appendToCalc('+')">+</button></div>
+                                            </div>
+                                            <div class="row mt-1">
+                                                <div class="col-12"><button class="btn btn-danger w-100" onclick="clearCalc()">Clear</button></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Currency Converter Widget -->
+                        <div class="col-md-4 mb-4 widget" id="currency-widget-container" data-widget="currency" style="display: none;">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title d-flex align-items-center justify-content-between">
+                                        <span>
+                                            <img src="{{ url_for('static', filename='currency.png') }}" alt="Currency Converter" class="app-icon">
+                                            Currency Converter
+                                        </span>
+                                        <button class="btn btn-sm btn-danger" onclick="removeWidget('currency')">Remove</button>
+                                    </h5>
+                                    <div id="currency-widget">
+                                        <div class="input-group mb-2">
+                                            <input type="number" id="currency-amount" class="form-control" placeholder="Amount">
+                                            <select id="currency-from" class="form-select">
+                                                <option value="USD">USD</option>
+                                                <option value="EUR">EUR</option>
+                                                <option value="GBP">GBP</option>
+                                                <option value="JPY">JPY</option>
+                                            </select>
+                                            <select id="currency-to" class="form-select">
+                                                <option value="USD">USD</option>
+                                                <option value="EUR">EUR</option>
+                                                <option value="GBP">GBP</option>
+                                                <option value="JPY">JPY</option>
+                                            </select>
+                                        </div>
+                                        <button class="btn btn-primary" onclick="convertCurrency()">Convert</button>
+                                        <div id="currency-result" class="mt-2"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Unit Converter Widget -->
+                        <div class="col-md-4 mb-4 widget" id="unit-widget-container" data-widget="unit" style="display: none;">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title d-flex align-items-center justify-content-between">
+                                        <span>
+                                            <img src="{{ url_for('static', filename='unit.png') }}" alt="Unit Converter" class="app-icon">
+                                            Unit Converter
+                                        </span>
+                                        <button class="btn btn-sm btn-danger" onclick="removeWidget('unit')">Remove</button>
+                                    </h5>
+                                    <div id="unit-widget">
+                                        <div class="input-group mb-2">
+                                            <input type="number" id="unit-amount" class="form-control" placeholder="Amount">
+                                            <select id="unit-from" class="form-select">
+                                                <option value="meters">Meters</option>
+                                                <option value="kilometers">Kilometers</option>
+                                                <option value="miles">Miles</option>
+                                                <option value="feet">Feet</option>
+                                            </select>
+                                            <select id="unit-to" class="form-select">
+                                                <option value="meters">Meters</option>
+                                                <option value="kilometers">Kilometers</option>
+                                                <option value="miles">Miles</option>
+                                                <option value="feet">Feet</option>
+                                            </select>
+                                        </div>
+                                        <button class="btn btn-primary" onclick="convertUnit()">Convert</button>
+                                        <div id="unit-result" class="mt-2"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Stock Tracker Widget -->
+                        <div class="col-md-4 mb-4 widget" id="stock-widget-container" data-widget="stock" style="display: none;">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title d-flex align-items-center justify-content-between">
+                                        <span>
+                                            <img src="{{ url_for('static', filename='stock.png') }}" alt="Stock Tracker" class="app-icon">
+                                            Stock Tracker
+                                        </span>
+                                        <button class="btn btn-sm btn-danger" onclick="removeWidget('stock')">Remove</button>
+                                    </h5>
+                                    <div id="stock-widget">
+                                        <div class="input-group mb-2">
+                                            <input type="text" id="stock-symbol" class="form-control" placeholder="Enter stock symbol">
+                                            <button class="btn btn-primary" onclick="getStockData()">Get Stock Data</button>
+                                        </div>
+                                        <div id="stock-data" class="mt-2"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Weekly Changelog Widget -->
+                        <div class="col-md-4 mb-4 widget" id="changelog-widget-container" data-widget="changelog" style="display: none;">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title d-flex align-items-center justify-content-between">
+                                        <span>
+                                            <img src="{{ url_for('static', filename='changelog.png') }}" alt="Weekly Changelog" class="app-icon">
+                                            Weekly Changelog
+                                        </span>
+                                        <button class="btn btn-sm btn-danger" onclick="removeWidget('changelog')">Remove</button>
+                                    </h5>
+                                    <div id="changelog-widget">
+                                        <div class="input-group mb-2">
+                                            <input type="week" id="changelog-week" class="form-control" placeholder="Select week">
+                                            <button class="btn btn-primary" onclick="loadChangelog()">Load Changelog</button>
+                                        </div>
+                                        <div id="changelog-data" class="mt-2"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Countdown Timer Widget -->
+                        <div class="col-md-4 mb-4 widget" id="countdown-widget-container" data-widget="countdown" style="display: none;">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title d-flex align-items-center justify-content-between">
+                                        <span>
+                                            <img src="{{ url_for('static', filename='countdown.png') }}" alt="Countdown Timer" class="app-icon">
+                                            Countdown Timer
+                                        </span>
+                                        <button class="btn btn-sm btn-danger" onclick="removeWidget('countdown')">Remove</button>
+                                    </h5>
+                                    <div id="countdown-widget">
+                                        <input type="datetime-local" id="countdown-date" class="form-control mb-2">
+                                        <button class="btn btn-primary" onclick="startCountdown()">Start Countdown</button>
+                                        <div id="countdown-display" class="mt-2"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-sm btn-primary mt-3" onclick="showWidgetManager()">Add Widget</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="widget-manager" style="display: none;">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Add Widget</h5>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="clock-checkbox">
+                <label class="form-check-label" for="clock-checkbox">Clock</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="weather-checkbox">
+                <label class="form-check-label" for="weather-checkbox">Weather</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="notes-checkbox">
+                <label class="form-check-label" for="notes-checkbox">Notes</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="todo-checkbox">
+                <label class="form-check-label" for="todo-checkbox">Todo List</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="news-checkbox">
+                <label class="form-check-label" for="news-checkbox">News Feed</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="calculator-checkbox">
+                <label class="form-check-label" for="calculator-checkbox">Calculator</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="currency-checkbox">
+                <label class="form-check-label" for="currency-checkbox">Currency Converter</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="unit-checkbox">
+                <label class="form-check-label" for="unit-checkbox">Unit Converter</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="stock-checkbox">
+                <label class="form-check-label" for="stock-checkbox">Stock Tracker</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="changelog-checkbox">
+                <label class="form-check-label" for="changelog-checkbox">Weekly Changelog</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="countdown-checkbox">
+                <label class="form-check-label" for="countdown-checkbox">Countdown Timer</label>
+            </div>
+            <button class="btn btn-sm btn-primary mt-3" onclick="saveWidgetPreferences()">Add</button>
+            <button class="btn btn-sm btn-secondary mt-3" onclick="hideWidgetManager()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .digital-clock {
+        font-size: 2em;
+        font-weight: bold;
+        text-align: center;
+    }
+    #widget-manager {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1000;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    .app-icon {
+        width: 24px;
+        height: 24px;
+        margin-right: 8px;
+    }
+    .todo-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .todo-text {
+        flex-grow: 1;
+    }
+    .todo-actions {
+        display: flex;
+    }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.14.0/Sortable.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Widget elements
+        const digitalClock = document.getElementById('digital-clock');
+        const analogClock = document.getElementById('analog-clock');
+        const notesWidget = document.getElementById('notes-widget');
+        const widgetManager = document.getElementById('widget-manager');
+        const calcDisplay = document.getElementById('calc-display');
+        const widgetContainer = document.getElementById('widget-container');
+
+        // Available widgets
+        const availableWidgets = [
+            'clock', 'weather', 'notes', 'todo', 'news', 'calculator', 'currency', 'unit', 'stock', 'changelog', 'countdown'
+        ];
+
+        // Initialize Sortable for drag-and-drop functionality
+        Sortable.create(widgetContainer, {
+            animation: 150,
+            onEnd: function(evt) {
+                saveWidgetOrder();
+            }
+        });
+
+        // Clock functions
+        function updateDigitalClock() {
+            if (digitalClock) {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                digitalClock.innerHTML = `${hours}:${minutes}:${seconds}`;
+                setTimeout(updateDigitalClock, 1000);
+            }
+        }
+
+        function updateAnalogClock() {
+            if (analogClock) {
+                const ctx = analogClock.getContext('2d');
+                const now = new Date();
+                const hours = now.getHours() % 12;
+                const minutes = now.getMinutes();
+                const seconds = now.getSeconds();
+
+                // Clear the canvas
+                ctx.clearRect(0, 0, 200, 200);
+
+                // Draw clock face
+                ctx.beginPath();
+                ctx.arc(100, 100, 95, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Draw hour marks
+                for (let i = 0; i < 12; i++) {
+                    ctx.save();
+                    ctx.translate(100, 100);
+                    ctx.rotate(i * Math.PI / 6);
+                    ctx.beginPath();
+                    ctx.moveTo(0, -85);
+                    ctx.lineTo(0, -95);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+
+                // Hour hand
+                ctx.save();
+                ctx.translate(100, 100);
+                ctx.rotate((hours + minutes / 60) * Math.PI / 6);
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(0, -50);
+                ctx.stroke();
+                ctx.restore();
+
+                // Minute hand
+                ctx.save();
+                ctx.translate(100, 100);
+                ctx.rotate(minutes * Math.PI / 30);
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(0, -70);
+                ctx.stroke();
+                ctx.restore();
+
+                // Second hand
+                ctx.save();
+                ctx.translate(100, 100);
+                ctx.rotate(seconds * Math.PI / 30);
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = 'red';
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(0, -80);
+                ctx.stroke();
+                ctx.restore();
+
+                // Center dot
+                ctx.beginPath();
+                ctx.arc(100, 100, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                setTimeout(updateAnalogClock, 1000);
+            }
+        }
+
+        window.toggleClockView = function() {
+            if (digitalClock.style.display === 'none') {
+                digitalClock.style.display = 'block';
+                analogClock.style.display = 'none';
+            } else {
+                digitalClock.style.display = 'none';
+                analogClock.style.display = 'block';
+            }
+            // Save preference
+            setCookie('clock-view', digitalClock.style.display === 'none' ? 'analog' : 'digital', 365);
+        }
+
+        // Weather functions
+        window.getLocation = function() {
+            document.getElementById('weather-data').innerHTML = 'Fetching weather data...';
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    fetchWeather(lat, lon);
+                }, function(error) {
+                    document.getElementById('weather-data').innerHTML = 'Unable to retrieve your location: ' + error.message;
+                });
+            } else {
+                document.getElementById('weather-data').innerHTML = 'Geolocation is not supported by this browser.';
+            }
+        }
+
+        function fetchWeather(lat, lon) {
+            // Mock weather data
+            const mockWeatherData = {
+                name: 'Amsterdam',
+                main: {
+                    temp: 15,
+                    humidity: 80
+                },
+                weather: [{
+                    description: 'Clear sky'
+                }],
+                wind: {
+                    speed: 3
+                }
+            };
+
+            const weatherDataDiv = document.getElementById('weather-data');
+            weatherDataDiv.innerHTML = `
+                <div class="text-center">
+                    <h4>${mockWeatherData.name}</h4>
+                    <p><strong>${mockWeatherData.main.temp}°C</strong></p>
+                    <p>${mockWeatherData.weather[0].description}</p>
+                    <p>Humidity: ${mockWeatherData.main.humidity}%</p>
+                    <p>Wind: ${mockWeatherData.wind.speed} m/s</p>
+                </div>
+            `;
+        }
+
+        // Notes functions
+        function loadNotes() {
+            if (notesWidget) {
+                const savedNotes = getCookie('dashboard-notes');
+                if (savedNotes) {
+                    notesWidget.value = savedNotes;
+                }
+                notesWidget.addEventListener('input', function() {
+                    setCookie('dashboard-notes', notesWidget.value, 365);
+                });
+            }
+        }
+
+        // Todo List functions
+        window.addTodoItem = function() {
+            const todoInput = document.getElementById('todo-input');
+            const todoDueDate = document.getElementById('todo-due-date').value;
+            const todoText = todoInput.value.trim();
+
+            if (todoText) {
+                const todoList = document.getElementById('todo-list');
+                const todoItems = getTodoItems();
+
+                todoItems.push({
+                    id: Date.now(),
+                    text: todoText,
+                    dueDate: todoDueDate,
+                    completed: false
+                });
+
+                saveTodoItems(todoItems);
+                renderTodoList();
+                todoInput.value = '';
+                document.getElementById('todo-due-date').value = '';
+            }
+        }
+
+        document.getElementById('todo-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addTodoItem();
+            }
+        });
+
+        function getTodoItems() {
+            const items = getCookie('dashboard-todo-items');
+            return items ? JSON.parse(items) : [];
+        }
+
+        function saveTodoItems(items) {
+            setCookie('dashboard-todo-items', JSON.stringify(items), 365);
+        }
+
+        function renderTodoList() {
+            const todoList = document.getElementById('todo-list');
+            const todoItems = getTodoItems();
+
+            todoList.innerHTML = '';
+
+            if (todoItems.length === 0) {
+                todoList.innerHTML = '<div class="text-center p-3">No tasks yet. Add one above!</div>';
+                return;
+            }
+
+            todoItems.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item todo-item';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'form-check-input me-2';
+                checkbox.checked = item.completed;
+                checkbox.addEventListener('change', function() {
+                    toggleTodoItem(item.id);
+                });
+
+                const span = document.createElement('span');
+                span.className = 'todo-text';
+                span.innerHTML = `<strong>${item.text}</strong><br><small>Due: ${new Date(item.dueDate).toLocaleDateString()}</small>`;
+                if (item.completed) {
+                    span.style.textDecoration = 'line-through';
+                    span.style.color = '#6c757d';
+                }
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'btn btn-sm btn-outline-danger ms-2';
+                deleteBtn.innerHTML = '&times;';
+                deleteBtn.addEventListener('click', function() {
+                    deleteTodoItem(item.id);
+                });
+
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'todo-actions';
+                actionsDiv.appendChild(deleteBtn);
+
+                li.appendChild(checkbox);
+                li.appendChild(span);
+                li.appendChild(actionsDiv);
+                todoList.appendChild(li);
+            });
+        }
+
+        function toggleTodoItem(id) {
+            const todoItems = getTodoItems();
+            const updated = todoItems.map(item => {
+                if (item.id === id) {
+                    return { ...item, completed: !item.completed };
+                }
+                return item;
+            });
+            saveTodoItems(updated);
+            renderTodoList();
+        }
+
+        function deleteTodoItem(id) {
+            const todoItems = getTodoItems();
+            const updated = todoItems.filter(item => item.id !== id);
+            saveTodoItems(updated);
+            renderTodoList();
+        }
+
+        // News Feed functions
+        window.fetchNews = function() {
+            const newsCategory = document.getElementById('news-category').value;
+            const newsList = document.getElementById('news-list');
+
+            newsList.innerHTML = '<div class="text-center p-3">Loading news...</div>';
+
+            // Mock news data
+            const mockNewsData = {
+                general: [
+                    { title: 'General News 1', source: 'Source 1', publishedAt: '2023-10-01T12:00:00Z', url: 'https://example.com/news1' },
+                    { title: 'General News 2', source: 'Source 2', publishedAt: '2023-10-01T13:00:00Z', url: 'https://example.com/news2' }
+                ],
+                business: [
+                    { title: 'Business News 1', source: 'Source 3', publishedAt: '2023-10-01T14:00:00Z', url: 'https://example.com/news3' },
+                    { title: 'Business News 2', source: 'Source 4', publishedAt: '2023-10-01T15:00:00Z', url: 'https://example.com/news4' }
+                ],
+                technology: [
+                    { title: 'Tech News 1', source: 'Source 5', publishedAt: '2023-10-01T16:00:00Z', url: 'https://example.com/news5' },
+                    { title: 'Tech News 2', source: 'Source 6', publishedAt: '2023-10-01T17:00:00Z', url: 'https://example.com/news6' }
+                ],
+                sports: [
+                    { title: 'Sports News 1', source: 'Source 7', publishedAt: '2023-10-01T18:00:00Z', url: 'https://example.com/news7' },
+                    { title: 'Sports News 2', source: 'Source 8', publishedAt: '2023-10-01T19:00:00Z', url: 'https://example.com/news8' }
+                ],
+                entertainment: [
+                    { title: 'Entertainment News 1', source: 'Source 9', publishedAt: '2023-10-01T20:00:00Z', url: 'https://example.com/news9' },
+                    { title: 'Entertainment News 2', source: 'Source 10', publishedAt: '2023-10-01T21:00:00Z', url: 'https://example.com/news10' }
+                ],
+                science: [
+                    { title: 'Science News 1', source: 'Source 11', publishedAt: '2023-10-01T22:00:00Z', url: 'https://example.com/news11' },
+                    { title: 'Science News 2', source: 'Source 12', publishedAt: '2023-10-01T23:00:00Z', url: 'https://example.com/news12' }
+                ],
+                health: [
+                    { title: 'Health News 1', source: 'Source 13', publishedAt: '2023-10-02T00:00:00Z', url: 'https://example.com/news13' },
+                    { title: 'Health News 2', source: 'Source 14', publishedAt: '2023-10-02T01:00:00Z', url: 'https://example.com/news14' }
+                ]
+            };
+
+            const articles = mockNewsData[newsCategory] || [];
+
+            if (articles.length > 0) {
+                newsList.innerHTML = '';
+
+                // Display only the first 5 articles
+                const displayArticles = articles.slice(0, 5);
+
+                displayArticles.forEach(article => {
+                    const item = document.createElement('a');
+                    item.href = article.url;
+                    item.target = '_blank';
+                    item.className = 'list-group-item list-group-item-action';
+
+                    const title = document.createElement('h6');
+                    title.textContent = article.title;
+
+                    const source = document.createElement('small');
+                    source.className = 'text-muted';
+                    source.textContent = `${article.source} - ${new Date(article.publishedAt).toLocaleDateString()}`;
+
+                    item.appendChild(title);
+                    item.appendChild(source);
+                    newsList.appendChild(item);
+                });
+            } else {
+                newsList.innerHTML = '<div class="text-center p-3">No news found.</div>';
+            }
+        }
+
+        // Calculator functions
+        if (calcDisplay) {
+            calcDisplay.value = '';
+        }
+
+        window.appendToCalc = function(val) {
+            if (calcDisplay) {
+                calcDisplay.value += val;
+            }
+        }
+
+        window.clearCalc = function() {
+            if (calcDisplay) {
+                calcDisplay.value = '';
+            }
+        }
+
+        window.calculateResult = function() {
+            if (calcDisplay) {
+                try {
+                    calcDisplay.value = eval(calcDisplay.value);
+                } catch (error) {
+                    calcDisplay.value = 'Error';
+                    setTimeout(() => {
+                        calcDisplay.value = '';
+                    }, 1500);
+                }
+            }
+        }
+
+        // Currency Converter functions
+        window.convertCurrency = function() {
+            const amount = parseFloat(document.getElementById('currency-amount').value);
+            const fromCurrency = document.getElementById('currency-from').value;
+            const toCurrency = document.getElementById('currency-to').value;
+
+            // Mock conversion rates
+            const conversionRates = {
+                USD: { EUR: 0.85, GBP: 0.75, JPY: 110 },
+                EUR: { USD: 1.18, GBP: 0.88, JPY: 130 },
+                GBP: { USD: 1.33, EUR: 1.13, JPY: 150 },
+                JPY: { USD: 0.0091, EUR: 0.0077, GBP: 0.0067 }
+            };
+
+            if (conversionRates[fromCurrency] && conversionRates[fromCurrency][toCurrency]) {
+                const rate = conversionRates[fromCurrency][toCurrency];
+                const convertedAmount = amount * rate;
+                document.getElementById('currency-result').innerHTML = `Converted Amount: ${convertedAmount.toFixed(2)} ${toCurrency}`;
+            } else {
+                document.getElementById('currency-result').innerHTML = 'Conversion rate not available.';
+            }
+        }
+
+        // Unit Converter functions
+        window.convertUnit = function() {
+            const amount = parseFloat(document.getElementById('unit-amount').value);
+            const fromUnit = document.getElementById('unit-from').value;
+            const toUnit = document.getElementById('unit-to').value;
+
+            // Mock conversion rates
+            const conversionRates = {
+                meters: { kilometers: 0.001, miles: 0.000621371, feet: 3.28084 },
+                kilometers: { meters: 1000, miles: 0.621371, feet: 3280.84 },
+                miles: { meters: 1609.34, kilometers: 1.60934, feet: 5280 },
+                feet: { meters: 0.3048, kilometers: 0.0003048, miles: 0.000189394 }
+            };
+
+            if (conversionRates[fromUnit] && conversionRates[fromUnit][toUnit]) {
+                const rate = conversionRates[fromUnit][toUnit];
+                const convertedAmount = amount * rate;
+                document.getElementById('unit-result').innerHTML = `Converted Amount: ${convertedAmount.toFixed(2)} ${toUnit}`;
+            } else {
+                document.getElementById('unit-result').innerHTML = 'Conversion rate not available.';
+            }
+        }
+
+        // Stock Tracker functions
+        window.getStockData = function() {
+            const stockSymbol = document.getElementById('stock-symbol').value.trim();
+            const stockDataDiv = document.getElementById('stock-data');
+
+            if (stockSymbol) {
+                // Mock stock data
+                const mockStockData = {
+                    AAPL: { name: 'Apple Inc.', price: 150.75, change: 2.45 },
+                    GOOGL: { name: 'Alphabet Inc.', price: 2755.68, change: -15.75 },
+                    AMZN: { name: 'Amazon.com Inc.', price: 3300.25, change: 55.25 }
+                };
+
+                const stockData = mockStockData[stockSymbol];
+
+                if (stockData) {
+                    stockDataDiv.innerHTML = `
+                        <div class="text-center">
+                            <h4>${stockData.name}</h4>
+                            <p>Price: $${stockData.price}</p>
+                            <p>Change: $${stockData.change}</p>
+                        </div>
+                    `;
+                } else {
+                    stockDataDiv.innerHTML = 'Stock data not found.';
+                }
+            }
+        }
+
+        // Weekly Changelog functions
+        window.loadChangelog = function() {
+            const weekInput = document.getElementById('changelog-week');
+            const year = new Date().getFullYear();
+            const week = parseInt(weekInput.value.split('-W')[1], 10);
+
+            if (isNaN(week)) {
+                alert('Please select a valid week.');
+                return;
+            }
+
+            const changelogUrl = `/changelog/${week}/${year}`;
+            window.open(changelogUrl, '_blank');
+        }
+
+        // Countdown Timer functions
+        let countdownInterval;
+        let countdownEndTime;
+
+        window.startCountdown = function() {
+            const countdownDateInput = document.getElementById('countdown-date');
+            const countdownDisplay = document.getElementById('countdown-display');
+            const countdownDate = new Date(countdownDateInput.value);
+            countdownEndTime = countdownDate.getTime();
+
+            function updateCountdown() {
+                const now = new Date().getTime();
+                const diff = countdownEndTime - now;
+
+                if (diff <= 0) {
+                    countdownDisplay.innerHTML = 'Countdown finished!';
+                    clearInterval(countdownInterval);
+                    setCookie('dashboard-countdown-endtime', '', -1);
+                    return;
+                }
+
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                countdownDisplay.innerHTML = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+            }
+
+            updateCountdown();
+            countdownInterval = setInterval(updateCountdown, 1000);
+            setCookie('dashboard-countdown-endtime', countdownEndTime, 365);
+        }
+
+        function loadCountdownTimer() {
+            const savedEndTime = getCookie('dashboard-countdown-endtime');
+            if (savedEndTime) {
+                countdownEndTime = parseInt(savedEndTime, 10);
+                startCountdown();
+            }
+        }
+
+        // Widget management functions
+        window.removeWidget = function(widgetId) {
+            const widgetContainer = document.getElementById(`${widgetId}-widget-container`);
+            if (widgetContainer) {
+                widgetContainer.style.display = 'none';
+                const widgetPreferences = getWidgetPreferences();
+                const updatedPreferences = widgetPreferences.filter(id => id !== widgetId);
+                saveWidgetPreferences(updatedPreferences);
+                saveWidgetOrder();
+            }
+        }
+
+        window.showWidgetManager = function() {
+            widgetManager.style.display = 'block';
+            const widgetPreferences = getWidgetPreferences();
+
+            // Update checkboxes
+            availableWidgets.forEach(widgetId => {
+                document.getElementById(`${widgetId}-checkbox`).checked = widgetPreferences.includes(widgetId);
+            });
+        }
+
+        window.hideWidgetManager = function() {
+            widgetManager.style.display = 'none';
+        }
+
+        window.saveWidgetPreferences = function() {
+            const widgetPreferences = [];
+
+            // Collect checked widgets
+            availableWidgets.forEach(widgetId => {
+                const checkbox = document.getElementById(`${widgetId}-checkbox`);
+                if (checkbox.checked) {
+                    widgetPreferences.push(widgetId);
+                    document.getElementById(`${widgetId}-widget-container`).style.display = 'block';
+                } else {
+                    document.getElementById(`${widgetId}-widget-container`).style.display = 'none';
+                }
+            });
+
+            saveWidgetPreferences(widgetPreferences);
+            saveWidgetOrder();
+            hideWidgetManager();
+        }
+
+        function getWidgetPreferences() {
+            const savedWidgets = getCookie('dashboard-widgets');
+            return savedWidgets ? JSON.parse(savedWidgets) : [];
+        }
+
+        function saveWidgetPreferences(widgetPreferences) {
+            setCookie('dashboard-widgets', JSON.stringify(widgetPreferences), 365);
+        }
+
+        function loadWidgetPreferences() {
+            const widgetPreferences = getWidgetPreferences();
+            availableWidgets.forEach(widgetId => {
+                if (widgetPreferences.includes(widgetId)) {
+                    document.getElementById(`${widgetId}-widget-container`).style.display = 'block';
+                }
+            });
+        }
+
+        function saveWidgetOrder() {
+            const widgetOrder = [];
+            const widgetContainers = document.querySelectorAll('.widget');
+            widgetContainers.forEach(container => {
+                if (container.style.display !== 'none') {
+                    widgetOrder.push(container.getAttribute('data-widget'));
+                }
+            });
+            setCookie('dashboard-widget-order', JSON.stringify(widgetOrder), 365);
+        }
+
+        function loadWidgetOrder() {
+            const savedOrder = getCookie('dashboard-widget-order');
+            if (savedOrder) {
+                const widgetOrder = JSON.parse(savedOrder);
+                const widgetContainers = document.querySelectorAll('.widget');
+                const tempContainer = document.createDocumentFragment();
+
+                widgetOrder.forEach(widgetId => {
+                    const widgetContainer = document.getElementById(`${widgetId}-widget-container`);
+                    if (widgetContainer) {
+                        tempContainer.appendChild(widgetContainer);
+                    }
+                });
+
+                widgetContainer.appendChild(tempContainer);
+            }
+        }
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        function setCookie(name, value, days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+            const expires = `expires=${date.toUTCString()}`;
+            document.cookie = `${name}=${value};${expires};path=/`;
+        }
+
+        // Initialize widgets based on saved preferences
+        loadWidgetPreferences();
+        loadWidgetOrder();
+        updateDigitalClock();
+        updateAnalogClock();
+        loadNotes();
+        renderTodoList();
+        loadCountdownTimer();
+
+        // Load clock view preference
+        const clockView = getCookie('clock-view');
+        if (clockView === 'analog') {
+            toggleClockView();
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+
+{% block title %}Group Management{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="h2 border-bottom pb-2 mb-4">Group Management</h1>
+
+    <!-- Back to Dashboard Button -->
+    <div class="mb-4">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Tabs for different functions -->
+    <ul class="nav nav-tabs mb-4" id="groupManagementTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab == 'create' %}active{% endif %}" id="create-tab" data-bs-toggle="tab" data-bs-target="#create" type="button" role="tab" aria-controls="create" aria-selected="{% if active_tab == 'create' %}true{% else %}false{% endif %}">Create Group</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab == 'manage' %}active{% endif %}" id="manage-tab" data-bs-toggle="tab" data-bs-target="#manage" type="button" role="tab" aria-controls="manage" aria-selected="{% if active_tab == 'manage' %}true{% else %}false{% endif %}">Manage Groups</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link {% if active_tab == 'apps' %}active{% endif %}" id="apps-tab" data-bs-toggle="tab" data-bs-target="#apps" type="button" role="tab" aria-controls="apps" aria-selected="{% if active_tab == 'apps' %}true{% else %}false{% endif %}">Manage Apps</button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="groupManagementTabContent">
+        <!-- Create Group Tab -->
+        <div class="tab-pane fade {% if active_tab == 'create' %}show active{% endif %}" id="create" role="tabpanel" aria-labelledby="create-tab">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">New Group Form</h5>
+                            <form method="post">
+                                <input type="hidden" name="action" value="create_group">
+                                <input type="hidden" name="active_tab" value="create">
+                                <div class="mb-3">
+                                    <label for="group_name" class="form-label">Group Name</label>
+                                    <input type="text" class="form-control" id="group_name" name="group_name" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Create Group</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manage Groups Tab -->
+        <div class="tab-pane fade {% if active_tab == 'manage' %}show active{% endif %}" id="manage" role="tabpanel" aria-labelledby="manage-tab">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Existing Groups</h5>
+                            {% if groups %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Group Name</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for group in groups %}
+                                        <tr>
+                                            <td>{{ group[1:] }}</td>
+                                            <td>
+                                                <form method="post" style="display:inline;">
+                                                    <input type="hidden" name="group_name" value="{{ group[1:] }}">
+                                                    <input type="hidden" name="active_tab" value="manage">
+                                                    <button type="submit" name="action" value="delete_group" class="btn btn-danger btn-sm">Delete</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="alert alert-info">No groups exist yet.</div>
+                            {% endif %}
+
+                            <h5 class="card-title mt-4">Manage Group Members</h5>
+                            <form method="post" class="mb-4">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <select class="form-select" name="group_name" id="groupSelectManage" required>
+                                            <option value="" disabled selected>Select Group</option>
+                                            {% for group in groups %}
+                                            <option value="{{ group[1:] }}">{{ group[1:] }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <select class="form-select" name="user_id" required>
+                                            <option value="" disabled selected>Select User</option>
+                                            {% for user in users %}
+                                            <option value="{{ user.id }}">{{ user.username }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="hidden" name="active_tab" value="manage">
+                                        <button type="submit" name="action" value="add_user_to_group" class="btn btn-primary me-2">Add User</button>
+                                        <button type="submit" name="action" value="remove_user_from_group" class="btn btn-danger">Remove User</button>
+                                    </div>
+                                </div>
+                            </form>
+
+                            <h5 class="card-title">Users in Group</h5>
+                            <div id="groupUsersList" class="mt-3">
+                                <div class="alert alert-info">Select a group to see its members</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Manage Apps Tab -->
+        <div class="tab-pane fade {% if active_tab == 'apps' %}show active{% endif %}" id="apps" role="tabpanel" aria-labelledby="apps-tab">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Manage Apps for Groups</h5>
+                            <form method="post" class="mb-4">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <select class="form-select" name="group_name" id="groupSelectApps" required>
+                                            <option value="" disabled selected>Select Group</option>
+                                            {% for group in groups %}
+                                            <option value="{{ group[1:] }}">{{ group[1:] }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div id="appList" class="mb-3">
+                                    <div class="alert alert-info">Select a group to manage its apps</div>
+                                </div>
+                                
+                                <input type="hidden" name="active_tab" value="apps">
+                                <button type="submit" name="action" value="update_apps_for_group" class="btn btn-primary">Update Apps for Group</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript to dynamically load apps and users for the selected group -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    const groupSelectManage = document.getElementById('groupSelectManage');
+    const groupSelectApps = document.getElementById('groupSelectApps');
+    const appList = document.getElementById('appList');
+    const groupUsersList = document.getElementById('groupUsersList');
+
+    // Function to show tab content based on URL hash or session
+    function showActiveTab() {
+        const hash = window.location.hash;
+        if (hash) {
+            const tab = document.querySelector(`[data-bs-target="${hash}"]`);
+            if (tab) {
+                const bsTab = new bootstrap.Tab(tab);
+                bsTab.show();
+            }
+        }
+    }
+
+    // Call the function on page load
+    showActiveTab();
+
+    // Handle tab changes to update URL hash
+    document.querySelectorAll('#groupManagementTabs button').forEach(tab => {
+        tab.addEventListener('click', (event) => {
+            const target = event.target.getAttribute('data-bs-target');
+            window.location.hash = target;
+        });
+    });
+
+    // Group selection handler for manage tab
+    if (groupSelectManage) {
+        groupSelectManage.addEventListener('change', function() {
+            const selectedGroup = this.value;
+            if (selectedGroup) {
+                fetchUsersForGroup(selectedGroup);
+            }
+        });
+    }
+
+    // Group selection handler for apps tab
+    if (groupSelectApps) {
+        groupSelectApps.addEventListener('change', function() {
+            const selectedGroup = this.value;
+            if (selectedGroup) {
+                fetchAppsForGroup(selectedGroup);
+            }
+        });
+    }
+
+    function fetchAppsForGroup(groupName) {
+        fetch(`/get_apps_for_group?group_name=${groupName}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                appList.innerHTML = ''; // Clear previous content
+                
+                if (data.apps && data.apps.length > 0) {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    
+                    const cardBody = document.createElement('div');
+                    cardBody.className = 'card-body';
+                    
+                    const title = document.createElement('h6');
+                    title.className = 'card-title mb-3';
+                    title.textContent = `Select apps for ${groupName}`;
+                    
+                    cardBody.appendChild(title);
+                    
+                    data.apps.forEach(app => {
+                        const appDiv = document.createElement('div');
+                        appDiv.className = 'form-check mb-2';
+                        
+                        const checkbox = document.createElement('input');
+                        checkbox.className = 'form-check-input';
+                        checkbox.type = 'checkbox';
+                        checkbox.name = 'app_name';
+                        checkbox.value = app.url;
+                        checkbox.id = `app_${app.url}`;
+                        if (app.is_group_restricted) {
+                            checkbox.checked = true;
+                        }
+                        
+                        const label = document.createElement('label');
+                        label.className = 'form-check-label';
+                        label.htmlFor = `app_${app.url}`;
+                        label.textContent = app.name;
+                        
+                        appDiv.appendChild(checkbox);
+                        appDiv.appendChild(label);
+                        cardBody.appendChild(appDiv);
+                    });
+                    
+                    card.appendChild(cardBody);
+                    appList.appendChild(card);
+                } else {
+                    appList.innerHTML = '<div class="alert alert-info">No apps available</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching apps:', error);
+                appList.innerHTML = '<div class="alert alert-danger">Error loading apps</div>';
+            });
+    }
+
+    function fetchUsersForGroup(groupName) {
+        fetch(`/get_users_for_group?group_name=${groupName}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                groupUsersList.innerHTML = ''; // Clear previous content
+                
+                if (data.users && data.users.length > 0) {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    
+                    const cardBody = document.createElement('div');
+                    cardBody.className = 'card-body';
+                    
+                    const title = document.createElement('h6');
+                    title.className = 'card-title';
+                    title.textContent = `Members of ${groupName}`;
+                    
+                    cardBody.appendChild(title);
+                    
+                    const listGroup = document.createElement('ul');
+                    listGroup.className = 'list-group list-group-flush';
+                    
+                    data.users.forEach(user => {
+                        const listItem = document.createElement('li');
+                        listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                        listItem.textContent = user.username;
+                        
+                        listGroup.appendChild(listItem);
+                    });
+                    
+                    cardBody.appendChild(listGroup);
+                    card.appendChild(cardBody);
+                    groupUsersList.appendChild(card);
+                } else {
+                    groupUsersList.innerHTML = '<div class="alert alert-info">No users in this group</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching users:', error);
+                groupUsersList.innerHTML = '<div class="alert alert-danger">Error loading group members</div>';
+            });
+    }
+});
+</script>
+{% endblock %}

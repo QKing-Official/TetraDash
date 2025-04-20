@@ -1,0 +1,370 @@
+{% extends 'base.html' %}
+{% block title %}Login{% endblock %}
+{% block auth_content %}
+<div class="container">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <h2 class="text-center mb-4">Dashboard Login</h2>
+                    
+                    <!-- Flash messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }}" role="alert">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="post" id="loginForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" required autofocus>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                        
+                        <!-- Improved Slider CAPTCHA -->
+                        <div class="mb-3" id="captchaContainer">
+                            <label class="form-label">Verify you're human</label>
+                            <div class="captcha-slider">
+                                <div class="slider-track">
+                                    <div class="slider-thumb">
+                                        <i class="fas fa-lock"></i>
+                                    </div>
+                                    <div class="slider-text">Slide to verify</div>
+                                    <div class="slider-progress"></div>
+                                </div>
+                            </div>
+                            <div class="captcha-status text-center mt-2"></div>
+                            <input type="hidden" id="captcha_verified" name="captcha_verified" value="false">
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary" id="loginButton" disabled>Login</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Slider CAPTCHA Styles */
+.captcha-slider {
+    position: relative;
+    margin: 10px 0;
+    user-select: none;
+}
+
+.slider-track {
+    background: #f5f5f5;
+    height: 40px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.slider-thumb {
+    width: 40px;
+    height: 40px;
+    background: #007bff;
+    border-radius: 50%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    transition: transform 0.3s, background 0.3s;
+}
+
+.slider-thumb:hover {
+    background: #0069d9;
+}
+
+.slider-text {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #777;
+    font-size: 14px;
+    transition: opacity 0.3s;
+}
+
+.slider-progress {
+    position: absolute;
+    height: 100%;
+    width: 0;
+    background: rgba(0, 123, 255, 0.2);
+    border-radius: 20px 0 0 20px;
+    transition: width 0.3s;
+}
+
+.captcha-status {
+    font-size: 14px;
+    min-height: 20px;
+}
+
+/* Locked State */
+.captcha-locked .slider-track {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.captcha-locked .slider-thumb {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+/* Success State */
+.captcha-success .slider-track {
+    border-color: #28a745;
+}
+
+.captcha-success .slider-thumb {
+    background: #28a745;
+    left: calc(100% - 40px);
+    transform: rotate(360deg);
+}
+
+.captcha-success .slider-thumb i {
+    transition: all 0.3s;
+    transform: rotate(0deg);
+}
+
+.captcha-success .slider-thumb i:before {
+    content: "✓"; /* Font Awesome check icon */
+}
+
+.captcha-success .slider-progress {
+    width: 100%;
+    background: rgba(40, 167, 69, 0.2);
+}
+
+.captcha-success .slider-text {
+    opacity: 0;
+}
+
+/* Countdown Display */
+.countdown-timer {
+    font-weight: bold;
+    color: #dc3545;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Captcha elements
+    const sliderTrack = document.querySelector('.slider-track');
+    const sliderThumb = document.querySelector('.slider-thumb');
+    const sliderProgress = document.querySelector('.slider-progress');
+    const sliderText = document.querySelector('.slider-text');
+    const captchaStatus = document.querySelector('.captcha-status');
+    const loginButton = document.getElementById('loginButton');
+    const captchaContainer = document.getElementById('captchaContainer');
+    const loginForm = document.getElementById('loginForm');
+    
+    // Captcha state
+    let isDragging = false;
+    let startX = 0;
+    let currentX = 0;
+    let maxX = sliderTrack.offsetWidth - sliderThumb.offsetWidth;
+    let captchaVerified = false;
+    
+    // Anti-spam variables
+    let attemptCount = 0;
+    let lastAttemptTime = 0;
+    let isLocked = false;
+    let lockTimeout = null;
+    const maxAttempts = 4;
+    const attemptTimeframe = 5000; // 5 seconds
+    const lockDuration = 30000; // 30 seconds
+    
+    // Function to reset captcha
+    function resetCaptcha() {
+        sliderThumb.style.left = '0';
+        sliderProgress.style.width = '0';
+        sliderText.innerText = 'Slide to verify';
+        sliderText.style.opacity = '1';
+        captchaStatus.textContent = '';
+        captchaVerified = false;
+        loginButton.disabled = true;
+        
+        // Reset icon to lock
+        const icon = sliderThumb.querySelector('i');
+        icon.className = 'fas fa-lock';
+        
+        if (captchaContainer.classList.contains('captcha-success')) {
+            captchaContainer.classList.remove('captcha-success');
+        }
+    }
+    
+    // Function to lock captcha
+    function lockCaptcha() {
+        isLocked = true;
+        captchaContainer.classList.add('captcha-locked');
+        loginButton.disabled = true;
+        
+        // Update status with countdown
+        const endTime = Date.now() + lockDuration;
+        captchaStatus.innerHTML = `Too many attempts. Try again in <span class="countdown-timer">30</span> seconds.`;
+        
+        // Start countdown
+        const countdownEl = captchaStatus.querySelector('.countdown-timer');
+        
+        const updateCountdown = () => {
+            const remainingTime = Math.ceil((endTime - Date.now()) / 1000);
+            
+            if (remainingTime <= 0) {
+                clearInterval(countdownInterval);
+                unlockCaptcha();
+            } else {
+                countdownEl.textContent = remainingTime;
+            }
+        };
+        
+        const countdownInterval = setInterval(updateCountdown, 1000);
+        lockTimeout = setTimeout(unlockCaptcha, lockDuration);
+    }
+    
+    // Function to unlock captcha
+    function unlockCaptcha() {
+        isLocked = false;
+        captchaContainer.classList.remove('captcha-locked');
+        captchaStatus.textContent = '';
+        resetCaptcha();
+        attemptCount = 0;
+    }
+    
+    // Check for spam attempts
+    function checkSpamAttempts() {
+        const now = Date.now();
+        
+        if (now - lastAttemptTime < attemptTimeframe) {
+            attemptCount++;
+        } else {
+            attemptCount = 1;
+        }
+        
+        lastAttemptTime = now;
+        
+        if (attemptCount >= maxAttempts) {
+            lockCaptcha();
+            return true;
+        }
+        
+        return false;
+    }
+    
+// In your success animation function:
+function showSuccessAnimation() {
+    captchaContainer.classList.add('captcha-success');
+    sliderThumb.style.left = maxX + 'px';
+    sliderProgress.style.width = '100%';
+    sliderText.style.opacity = '0';
+    captchaStatus.textContent = '✓ Verification successful';
+    captchaStatus.style.color = '#28a745';
+    captchaVerified = true;
+    loginButton.disabled = false;
+    
+    // Set the hidden field value to indicate CAPTCHA success
+    document.getElementById('captcha_verified').value = 'true';
+}
+    
+    // Touch start / Mouse down handler
+    function handleStart(e) {
+        if (isLocked || captchaVerified) return;
+        
+        if (checkSpamAttempts()) return;
+        
+        isDragging = true;
+        startX = (e.type === 'mousedown') ? e.clientX : e.touches[0].clientX;
+        currentX = sliderThumb.offsetLeft;
+        
+        document.addEventListener('mousemove', handleMove);
+        document.addEventListener('touchmove', handleMove, { passive: false });
+        document.addEventListener('mouseup', handleEnd);
+        document.addEventListener('touchend', handleEnd);
+    }
+    
+    // Touch move / Mouse move handler
+    function handleMove(e) {
+        if (!isDragging) return;
+        
+        e.preventDefault();
+        
+        const pageX = (e.type === 'mousemove') ? e.clientX : e.touches[0].clientX;
+        let diffX = pageX - startX;
+        let newX = currentX + diffX;
+        
+        // Constrain within bounds
+        newX = Math.max(0, Math.min(newX, maxX));
+        
+        // Update thumb position and progress bar
+        sliderThumb.style.left = newX + 'px';
+        sliderProgress.style.width = ((newX / maxX) * 100) + '%';
+    }
+    
+    // Touch end / Mouse up handler
+    function handleEnd() {
+        if (!isDragging) return;
+        isDragging = false;
+        
+        document.removeEventListener('mousemove', handleMove);
+        document.removeEventListener('touchmove', handleMove);
+        document.removeEventListener('mouseup', handleEnd);
+        document.removeEventListener('touchend', handleEnd);
+        
+        const currentPosition = parseInt(sliderThumb.style.left) || 0;
+        
+        // Check if slider is completed (90% or more)
+        if (currentPosition >= maxX * 0.9) {
+            // Success!
+            showSuccessAnimation();
+        } else {
+            // Failed, reset
+            resetCaptcha();
+        }
+    }
+    
+    // Add event listeners
+    sliderThumb.addEventListener('mousedown', handleStart);
+    sliderThumb.addEventListener('touchstart', handleStart);
+    
+    // Handle form submission
+    loginForm.addEventListener('submit', function(e) {
+        if (!captchaVerified) {
+            e.preventDefault();
+            captchaStatus.textContent = '✗ Please complete the verification';
+            captchaStatus.style.color = '#dc3545';
+        }
+    });
+    
+    // Handle window resize (recalculate maxX)
+    window.addEventListener('resize', function() {
+        maxX = sliderTrack.offsetWidth - sliderThumb.offsetWidth;
+        
+        // If already verified, adjust the thumb position
+        if (captchaVerified) {
+            sliderThumb.style.left = maxX + 'px';
+        }
+    });
+});
+</script>
+{% endblock %}
